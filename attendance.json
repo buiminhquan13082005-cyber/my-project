@@ -1,0 +1,11 @@
+[
+  {
+    "AttendanceID": 1,
+    "EmployeeID": 1,
+    "ShiftID": 1,
+    "CheckInTime": "2026-04-22T13:56:39.6593057+07:00",
+    "CheckOutTime": "2026-04-22T14:14:35.2992861+07:00",
+    "CheckInMethod": "QR",
+    "TotalHours": 0.3
+  }
+]

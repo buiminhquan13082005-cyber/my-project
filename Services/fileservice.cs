@@ -5,22 +5,17 @@ namespace danentang.Services
 {
     public class JsonFileService
     {
-        private readonly string _filePath = "D:\\da nen tang\\danentang\\temporarydata.json";
-
-        // Hàm đọc danh sách User từ file
-        public async Task<List<User>> GetUsersAsync()
+        public List<T> GetData<T>(string filePath)
         {
-            if (!File.Exists(_filePath)) return new List<User>();
-
-            var json = await File.ReadAllTextAsync(_filePath);
-            return JsonSerializer.Deserialize<List<User>>(json) ?? new List<User>();
+            if (!File.Exists(filePath)) return new List<T>();
+            var json = File.ReadAllText(filePath);
+            return JsonSerializer.Deserialize<List<T>>(json) ?? new List<T>();
         }
 
-        // Hàm lưu danh sách User vào file (Dùng khi bạn làm tính năng Đăng ký)
-        public async Task SaveUsersAsync(List<User> users)
+        public void SaveData<T>(string filePath, List<T> data)
         {
-            var json = JsonSerializer.Serialize(users, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(_filePath, json);
+            var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, json);
         }
     }
 }
