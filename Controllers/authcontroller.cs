@@ -25,7 +25,7 @@ namespace danentang.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request, [FromServices] JsonFileService fileService)
         {
             // 1. Đọc dữ liệu từ file JSON thông qua Service
-            var users = await fileService.GetUsersAsync();
+            var users = fileService.GetData<User>("D:\\da nen tang\\danentang\\users.json");
 
             // 2. Dùng LINQ để tìm User theo Email
             var userInDb = users.FirstOrDefault(u => u.Email == request.Email);
@@ -35,7 +35,7 @@ namespace danentang.Controllers
                 return Unauthorized(new { status = "error", message = "Tài khoản không tồn tại." });
             }
 
-            //Console.WriteLine(">>> HASH CHUẨN LÀ: " + BCrypt.Net.BCrypt.HashPassword(request.Password));
+            Console.WriteLine(">>> HASH LÀ: " + BCrypt.Net.BCrypt.HashPassword(request.Password));
             // 3. Kiểm tra mật khẩu (BCrypt)
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, userInDb.PasswordHash);
 
