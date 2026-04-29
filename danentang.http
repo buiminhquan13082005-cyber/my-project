@@ -1,6 +1,0 @@
-@danentang_HostAddress = http://localhost:5092
-
-GET {{danentang_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
