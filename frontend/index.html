@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineManager - Quản lý Bảo trì & Kho Thiết bị Rạp Chiếu Phim</title>
+    <meta name="description" content="Hệ thống quản lý bảo trì thiết bị và kho thiết bị dự trữ cho rạp chiếu phim">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-bg-animation">
+            <div class="floating-shape shape-1"></div>
+            <div class="floating-shape shape-2"></div>
+            <div class="floating-shape shape-3"></div>
+            <div class="floating-shape shape-4"></div>
+        </div>
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-film"></i>
+                </div>
+                <h1>CineManager</h1>
+                <p>Quản lý Bảo trì & Kho Thiết bị</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail"><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" placeholder="admin@cinema.vn" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword"><i class="fas fa-lock"></i> Mật khẩu</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <span>Đăng nhập</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <div id="loginError" class="login-error" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="app-container" style="display:none;">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon-sm"><i class="fas fa-film"></i></div>
+                <span class="logo-text">CineManager</span>
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard" id="navDashboard">
+                    <i class="fas fa-chart-pie"></i><span>Tổng quan</span>
+                </a>
+                <div class="nav-section">Rạp chiếu</div>
+                <a href="#" class="nav-item" data-page="movies" id="navMovies">
+                    <i class="fas fa-film"></i><span>Phim</span>
+                </a>
+                <a href="#" class="nav-item" data-page="rooms" id="navRooms">
+                    <i class="fas fa-door-open"></i><span>Phòng chiếu</span>
+                </a>
+                <a href="#" class="nav-item" data-page="showtimes" id="navShowtimes">
+                    <i class="fas fa-calendar-alt"></i><span>Suất chiếu</span>
+                </a>
+                <div class="nav-section">Vận hành</div>
+                <a href="#" class="nav-item" data-page="equipment" id="navEquipment">
+                    <i class="fas fa-cogs"></i><span>Thiết bị</span>
+                </a>
+                <a href="#" class="nav-item" data-page="maintenance" id="navMaintenance">
+                    <i class="fas fa-wrench"></i><span>Bảo trì</span>
+                </a>
+                <a href="#" class="nav-item" data-page="warehouse" id="navWarehouse">
+                    <i class="fas fa-warehouse"></i><span>Kho</span>
+                </a>
+                <a href="#" class="nav-item" data-page="incidents" id="navIncidents">
+                    <i class="fas fa-exclamation-circle"></i><span>Sự cố</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reports" id="navReports">
+                    <i class="fas fa-file-alt"></i><span>Báo cáo</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn-logout" id="btnLogout">
+                    <i class="fas fa-sign-out-alt"></i><span>Đăng xuất</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <h2 id="pageTitle">Tổng quan</h2>
+                </div>
+                <div class="top-bar-right">
+                    <button class="btn-icon notification-btn" id="btnAlerts" title="Cảnh báo">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="alertBadge" style="display:none;">0</span>
+                    </button>
+                    <div class="user-info">
+                        <div class="avatar"><i class="fas fa-user"></i></div>
+                        <span id="userName">Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Page -->
+            <div id="pageDashboard" class="page active">
+                <div class="stats-grid">
+                    <div class="stat-card stat-primary" id="statEquipments">
+                        <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Thiết bị</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-warning" id="statPendingMaintenance">
+                        <div class="stat-icon"><i class="fas fa-wrench"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Cần bảo trì</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-danger" id="statLowStock">
+                        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Tồn kho thấp</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-success" id="statCompleted">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Đã hoàn tất</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-bell text-warning"></i> Cảnh báo hệ thống</h3>
+                            <button class="btn btn-sm btn-outline" id="btnScanMaintenance">
+                                <i class="fas fa-search"></i> Quét bảo trì
+                            </button>
+                        </div>
+                        <div class="card-body" id="alertsList">
+                            <div class="loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock text-primary"></i> Yêu cầu bảo trì gần đây</h3>
+                        </div>
+                        <div class="card-body" id="recentMaintenance">
+                            <div class="loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Page -->
+            <div id="pageEquipment" class="page">
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="btnAddEquipment">
+                        <i class="fas fa-plus"></i> Thêm thiết bị
+                    </button>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="equipmentSearch" placeholder="Tìm kiếm thiết bị...">
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="data-table" id="equipmentTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tên thiết bị</th>
+                                        <th>Phân loại</th>
+                                        <th>Thông số</th>
+                                        <th>Nhà sản xuất</th>
+                                        <th>Đơn vị</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="equipmentTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Page -->
+            <div id="pageMaintenance" class="page">
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="btnAddMaintenance">
+                        <i class="fas fa-plus"></i> Tạo yêu cầu bảo trì
+                    </button>
+                    <div class="filter-group">
+                        <select id="maintenanceFilter" class="form-select">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="Pending">Chờ xử lý</option>
+                            <option value="Assigned">Đã phân việc</option>
+                            <option value="InProgress">Đang xử lý</option>
+                            <option value="NeedReplacement">Cần thay thế</option>
+                            <option value="Completed">Hoàn tất</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="data-table" id="maintenanceTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Thiết bị</th>
+                                        <th>Loại</th>
+                                        <th>Ưu tiên</th>
+                                        <th>Trạng thái</th>
+                                        <th>Phân việc</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maintenanceTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warehouse Page -->
+            <div id="pageWarehouse" class="page">
+                <div class="warehouse-tabs">
+                    <button class="tab-btn active" data-tab="storage" id="tabStorage">
+                        <i class="fas fa-boxes"></i> Tồn kho
+                    </button>
+                    <button class="tab-btn" data-tab="import" id="tabImport">
+                        <i class="fas fa-arrow-down"></i> Nhập kho
+                    </button>
+                    <button class="tab-btn" data-tab="export" id="tabExport">
+                        <i class="fas fa-arrow-up"></i> Xuất kho
+                    </button>
+                    <button class="tab-btn" data-tab="transactions" id="tabTransactions">
+                        <i class="fas fa-history"></i> Lịch sử
+                    </button>
+                    <button class="tab-btn" data-tab="inventory" id="tabInventory">
+                        <i class="fas fa-clipboard-check"></i> Kiểm kê
+                    </button>
+                </div>
+
+                <!-- Storage Tab -->
+                <div class="tab-content active" id="tabContentStorage">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Thiết bị</th>
+                                            <th>Phân loại</th>
+                                            <th>Tồn kho</th>
+                                            <th>Tối thiểu</th>
+                                            <th>Tình trạng</th>
+                                            <th>Vị trí</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="storageTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Import Tab -->
+                <div class="tab-content" id="tabContentImport">
+                    <div class="card">
+                        <div class="card-header"><h3>Nhập kho thiết bị</h3></div>
+                        <div class="card-body">
+                            <form id="importForm" class="form-grid">
+                                <div class="form-group">
+                                    <label>Thiết bị</label>
+                                    <select id="importEquipmentId" class="form-select" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Số lượng</label>
+                                    <input type="number" id="importQuantity" class="form-input" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Đơn giá (VNĐ)</label>
+                                    <input type="number" id="importPrice" class="form-input" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Nhà cung cấp</label>
+                                    <input type="text" id="importSupplier" class="form-input" required>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Lý do</label>
+                                    <textarea id="importReason" class="form-input" rows="2"></textarea>
+                                </div>
+                                <div class="form-actions full-width">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Nhập kho</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Tab -->
+                <div class="tab-content" id="tabContentExport">
+                    <div class="card">
+                        <div class="card-header"><h3>Xuất kho thiết bị</h3></div>
+                        <div class="card-body">
+                            <form id="exportForm" class="form-grid">
+                                <div class="form-group">
+                                    <label>Thiết bị</label>
+                                    <select id="exportEquipmentId" class="form-select" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Số lượng</label>
+                                    <input type="number" id="exportQuantity" class="form-input" min="1" required>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Lý do xuất</label>
+                                    <textarea id="exportReason" class="form-input" rows="2" required></textarea>
+                                </div>
+                                <div class="form-actions full-width">
+                                    <button type="submit" class="btn btn-warning"><i class="fas fa-arrow-up"></i> Xuất kho</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div class="tab-content" id="tabContentTransactions">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Thiết bị</th>
+                                            <th>Loại</th>
+                                            <th>Số lượng</th>
+                                            <th>Đơn giá</th>
+                                            <th>NCC</th>
+                                            <th>Lý do</th>
+                                            <th>Ngày</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactionTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Check Tab -->
+                <div class="tab-content" id="tabContentInventory">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Kiểm kê kho</h3>
+                            <button class="btn btn-primary btn-sm" id="btnNewCheck">
+                                <i class="fas fa-plus"></i> Tạo kiểm kê mới
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Thiết bị</th>
+                                            <th>SL hệ thống</th>
+                                            <th>SL thực tế</th>
+                                            <th>Chênh lệch</th>
+                                            <th>Ghi chú</th>
+                                            <th>Người kiểm</th>
+                                            <th>Ngày</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="checksTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Movies Page -->
+            <div id="pageMovies" class="page">
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="btnAddMovie"><i class="fas fa-plus"></i> Thêm phim</button>
+                    <div class="filter-group">
+                        <select id="movieFilter" class="form-select"><option value="">Tất cả</option><option value="NowShowing">Đang chiếu</option><option value="ComingSoon">Sắp chiếu</option><option value="Ended">Đã kết thúc</option></select>
+                    </div>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-responsive"><table class="data-table"><thead><tr><th>ID</th><th>Tên phim</th><th>Thể loại</th><th>Thời lượng</th><th>Ngày chiếu</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="movieTableBody"></tbody></table></div></div></div>
+            </div>
+
+            <!-- Rooms Page -->
+            <div id="pageRooms" class="page">
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="btnAddRoom"><i class="fas fa-plus"></i> Thêm phòng</button>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-responsive"><table class="data-table"><thead><tr><th>ID</th><th>Tên phòng</th><th>Sức chứa</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="roomTableBody"></tbody></table></div></div></div>
+            </div>
+
+            <!-- Showtimes Page -->
+            <div id="pageShowtimes" class="page">
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="btnAddShowtime"><i class="fas fa-plus"></i> Thêm suất chiếu</button>
+                    <div class="filter-group">
+                        <input type="date" id="showtimeDate" class="form-input">
+                        <button class="btn btn-sm btn-outline" id="btnFilterShowtime"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-responsive"><table class="data-table"><thead><tr><th>ID</th><th>Phim</th><th>Phòng</th><th>Bắt đầu</th><th>Kết thúc</th><th>Thao tác</th></tr></thead><tbody id="showtimeTableBody"></tbody></table></div></div></div>
+            </div>
+
+            <!-- Incidents Page -->
+            <div id="pageIncidents" class="page">
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="btnAddIncident"><i class="fas fa-plus"></i> Báo cáo sự cố</button>
+                    <div class="filter-group">
+                        <select id="incidentFilter" class="form-select"><option value="">Tất cả</option><option value="Open">Mở</option><option value="InProgress">Đang xử lý</option><option value="Resolved">Đã giải quyết</option></select>
+                    </div>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-responsive"><table class="data-table"><thead><tr><th>ID</th><th>Phòng</th><th>Nhân viên</th><th>Mô tả</th><th>Trạng thái</th><th>Ngày</th><th>Thao tác</th></tr></thead><tbody id="incidentTableBody"></tbody></table></div></div></div>
+            </div>
+
+            <!-- Reports Page -->
+            <div id="pageReports" class="page">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-file-alt"></i> Báo cáo cuối ngày</h3>
+                        <div class="filter-group">
+                            <input type="date" id="reportDate" class="form-input">
+                            <button class="btn btn-primary btn-sm" id="btnLoadReport"><i class="fas fa-search"></i> Xem</button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="reportContent">
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar"></i>
+                            <p>Chọn ngày để xem báo cáo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" style="display:none;">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal</h3>
+                <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
