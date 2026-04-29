@@ -1,8 +1,0 @@
-[
-  { "ScheduleID": 1, "EquipmentID": 1, "EquipmentName": "Máy chiếu Epson EB-X51", "LastMaintenanceDate": "2026-03-15", "NextMaintenanceDate": "2026-04-30", "MaintenanceIntervalDays": 45, "WarrantyExpiry": "2027-06-01", "ShelfLifeExpiry": null },
-  { "ScheduleID": 2, "EquipmentID": 2, "EquipmentName": "Loa JBL Cinema SP8", "LastMaintenanceDate": "2026-03-01", "NextMaintenanceDate": "2026-05-01", "MaintenanceIntervalDays": 60, "WarrantyExpiry": "2027-12-01", "ShelfLifeExpiry": null },
-  { "ScheduleID": 3, "EquipmentID": 4, "EquipmentName": "Bóng đèn máy chiếu ELPLP97", "LastMaintenanceDate": "2026-01-15", "NextMaintenanceDate": "2026-04-15", "MaintenanceIntervalDays": 90, "WarrantyExpiry": "2026-05-15", "ShelfLifeExpiry": "2026-07-01" },
-  { "ScheduleID": 4, "EquipmentID": 5, "EquipmentName": "Máy làm bỏng ngô Popcorn Pro 16", "LastMaintenanceDate": "2026-04-01", "NextMaintenanceDate": "2026-05-15", "MaintenanceIntervalDays": 45, "WarrantyExpiry": "2027-01-01", "ShelfLifeExpiry": null },
-  { "ScheduleID": 5, "EquipmentID": 6, "EquipmentName": "Máy pha nước ngọt Cornelius", "LastMaintenanceDate": "2026-02-01", "NextMaintenanceDate": "2026-04-28", "MaintenanceIntervalDays": 90, "WarrantyExpiry": "2026-06-01", "ShelfLifeExpiry": null },
-  { "ScheduleID": 6, "EquipmentID": 9, "EquipmentName": "Điều hòa Daikin Inverter 48000BTU", "LastMaintenanceDate": "2026-03-20", "NextMaintenanceDate": "2026-06-20", "MaintenanceIntervalDays": 90, "WarrantyExpiry": "2028-03-20", "ShelfLifeExpiry": null }
-]
