@@ -1,0 +1,4 @@
+[
+  { "TransactionID": 1, "EquipmentID": 4, "EquipmentName": "Bóng đèn máy chiếu ELPLP97", "TransactionType": "Import", "Quantity": 5, "UnitPrice": 2500000, "Supplier": "Epson Việt Nam", "EmployeeID": 1, "EmployeeName": "Admin", "Reason": "Nhập bổ sung", "TransactionDate": "2026-04-20T10:00:00" },
+  { "TransactionID": 2, "EquipmentID": 4, "EquipmentName": "Bóng đèn máy chiếu ELPLP97", "TransactionType": "Export", "Quantity": 2, "UnitPrice": 0, "Supplier": "", "EmployeeID": 3, "EmployeeName": "Trần Văn B", "Reason": "Thay thế bóng đèn phòng chiếu 1, 3", "TransactionDate": "2026-04-22T16:30:00" }
+]

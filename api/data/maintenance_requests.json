@@ -1,0 +1,4 @@
+[
+  { "RequestID": 1, "EquipmentID": 6, "EquipmentName": "Máy pha nước ngọt Cornelius", "ReportedByEmployeeID": 2, "ReportedByName": "Nguyễn Văn A", "AssignedToEmployeeID": 3, "AssignedToName": "Trần Văn B", "RequestType": "Emergency", "Description": "Máy pha nước bị rò rỉ nước, không làm lạnh được", "Priority": "High", "Status": "InProgress", "CreatedAt": "2026-04-27T14:30:00", "CompletedAt": null },
+  { "RequestID": 2, "EquipmentID": 4, "EquipmentName": "Bóng đèn máy chiếu ELPLP97", "ReportedByEmployeeID": null, "ReportedByName": "Hệ thống", "AssignedToEmployeeID": null, "AssignedToName": "", "RequestType": "Scheduled", "Description": "Bảo trì định kỳ - Hạn: 15/04/2026", "Priority": "High", "Status": "Pending", "CreatedAt": "2026-04-15T08:00:00", "CompletedAt": null }
+]

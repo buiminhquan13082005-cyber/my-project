@@ -1,0 +1,7 @@
+[
+  {"MovieID":1,"Title":"Avengers: Doomsday","Duration":150,"ReleaseDate":"2026-04-25","EndDate":"2026-06-25","TrailerURL":"https://youtube.com/watch?v=example1","Status":"NowShowing","PosterURL":"","Genre":"Hành động, Siêu anh hùng","Description":"Các siêu anh hùng Avengers đối đầu với Doctor Doom."},
+  {"MovieID":2,"Title":"Lật Mặt 9","Duration":130,"ReleaseDate":"2026-04-28","EndDate":"2026-06-28","TrailerURL":"https://youtube.com/watch?v=example2","Status":"NowShowing","PosterURL":"","Genre":"Hành động, Tâm lý","Description":"Phần mới nhất trong loạt phim Lật Mặt của Lý Hải."},
+  {"MovieID":3,"Title":"Inside Out 3","Duration":105,"ReleaseDate":"2026-05-15","EndDate":"2026-07-15","TrailerURL":"https://youtube.com/watch?v=example3","Status":"ComingSoon","PosterURL":"","Genre":"Hoạt hình, Gia đình","Description":"Riley bước vào tuổi trưởng thành với những cảm xúc mới."},
+  {"MovieID":4,"Title":"Mission Impossible: Final Reckoning","Duration":165,"ReleaseDate":"2026-05-01","EndDate":"2026-07-01","TrailerURL":"","Status":"ComingSoon","PosterURL":"","Genre":"Hành động, Phiêu lưu","Description":"Tom Cruise trong phần cuối cùng của loạt MI."},
+  {"MovieID":5,"Title":"Doraemon: Nobita và Vùng đất mới","Duration":95,"ReleaseDate":"2026-03-15","EndDate":"2026-04-30","TrailerURL":"","Status":"NowShowing","PosterURL":"","Genre":"Hoạt hình","Description":"Nobita cùng Doraemon khám phá vùng đất bí ẩn."}
+]

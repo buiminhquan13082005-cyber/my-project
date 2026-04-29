@@ -1,0 +1,19 @@
+[
+  {
+    "Id": 1,
+    "Email": "admin@test.com",
+    "PasswordHash": "$2a$11$wrpDdRu8pcIs.MfdmKoV5O6ECryRRuPeI9Lfk4lFk/LdegPHT2dsS",
+    "FullName": "admin"
+  },
+  {"Id": 2,
+    "Email": "tien@test.com",
+    "PasswordHash": "$2b$12$BMDRYarA89gN9jGBkV8n3OuNyAznfc0Db1nZloLe54nolnpPwffXS",
+    "FullName": "Nguyễn Tiến Phúc"
+  },
+  {
+    "Id": 3,
+    "Email": "quan@test.com",
+    "PasswordHash": "$2b$12$7iy5RgA5TO1R5DwuNgsT/eCD85L0Z4lk3Tzp9i5VTqlLKu04St6qC",
+    "FullName": "Bùi Minh Quân"
+  }
+]
