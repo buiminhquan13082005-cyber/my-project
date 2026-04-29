@@ -1,0 +1,9 @@
+[
+  {"ShowtimeID":1,"MovieID":1,"MovieTitle":"Avengers: Doomsday","RoomID":1,"RoomName":"Phòng 1 - Standard","StartTime":"2026-04-28T09:00:00","EndTime":"2026-04-28T11:30:00"},
+  {"ShowtimeID":2,"MovieID":2,"MovieTitle":"Lật Mặt 9","RoomID":2,"RoomName":"Phòng 2 - Standard","StartTime":"2026-04-28T09:30:00","EndTime":"2026-04-28T11:40:00"},
+  {"ShowtimeID":3,"MovieID":1,"MovieTitle":"Avengers: Doomsday","RoomID":3,"RoomName":"Phòng 3 - VIP","StartTime":"2026-04-28T13:00:00","EndTime":"2026-04-28T15:30:00"},
+  {"ShowtimeID":4,"MovieID":5,"MovieTitle":"Doraemon: Nobita và Vùng đất mới","RoomID":1,"RoomName":"Phòng 1 - Standard","StartTime":"2026-04-28T14:00:00","EndTime":"2026-04-28T15:35:00"},
+  {"ShowtimeID":5,"MovieID":2,"MovieTitle":"Lật Mặt 9","RoomID":5,"RoomName":"Phòng 5 - Standard","StartTime":"2026-04-28T16:00:00","EndTime":"2026-04-28T18:10:00"},
+  {"ShowtimeID":6,"MovieID":1,"MovieTitle":"Avengers: Doomsday","RoomID":1,"RoomName":"Phòng 1 - Standard","StartTime":"2026-04-28T19:00:00","EndTime":"2026-04-28T21:30:00"},
+  {"ShowtimeID":7,"MovieID":2,"MovieTitle":"Lật Mặt 9","RoomID":3,"RoomName":"Phòng 3 - VIP","StartTime":"2026-04-28T20:00:00","EndTime":"2026-04-28T22:10:00"}
+]

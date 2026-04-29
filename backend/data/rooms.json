@@ -1,0 +1,7 @@
+[
+  {"RoomID":1,"RoomName":"Phòng 1 - Standard","Capacity":96,"RoomStatus":"Active"},
+  {"RoomID":2,"RoomName":"Phòng 2 - Standard","Capacity":96,"RoomStatus":"Active"},
+  {"RoomID":3,"RoomName":"Phòng 3 - VIP","Capacity":48,"RoomStatus":"Active"},
+  {"RoomID":4,"RoomName":"Phòng 4 - IMAX","Capacity":120,"RoomStatus":"Maintenance"},
+  {"RoomID":5,"RoomName":"Phòng 5 - Standard","Capacity":96,"RoomStatus":"Active"}
+]
