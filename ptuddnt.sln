@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "my-project", "my-project", "{039EE3B4-1684-E957-2C26-157ABB8999FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "danentang", "my-project\danentang.csproj", "{2FB681EF-F684-04FE-7E38-64AC7F63B731}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2FB681EF-F684-04FE-7E38-64AC7F63B731}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FB681EF-F684-04FE-7E38-64AC7F63B731}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FB681EF-F684-04FE-7E38-64AC7F63B731}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FB681EF-F684-04FE-7E38-64AC7F63B731}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2FB681EF-F684-04FE-7E38-64AC7F63B731} = {039EE3B4-1684-E957-2C26-157ABB8999FD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {143EE9D7-1495-4B5F-B891-F64BFCB0F191}
+	EndGlobalSection
+EndGlobal
