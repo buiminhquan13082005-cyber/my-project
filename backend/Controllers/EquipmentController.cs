@@ -1,129 +1,155 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using danentang.Models;
-using danentang.Services;
+using danentang.Data;
+using danentang.Data.Entities;
 
 namespace danentang.Controllers
 {
+    /// <summary>
+    /// Controller quản lý thiết bị rạp - CRUD thiết bị, tồn kho, lịch bảo trì và cảnh báo.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
     public class EquipmentController : ControllerBase
     {
-        private readonly JsonFileService _fileService;
-        private readonly string _equipmentPath = "data/equipments.json";
-        private readonly string _storagePath = "data/equipment_storage.json";
-        private readonly string _schedulePath = "data/equipment_schedules.json";
+        private readonly CinemaDbContext _context;
 
-        public EquipmentController(JsonFileService fileService)
+        public EquipmentController(CinemaDbContext context)
         {
-            _fileService = fileService;
+            _context = context;
         }
 
-        // GET: api/equipment
+        /// <summary>
+        /// GET: api/equipment - Lấy danh sách tất cả thiết bị.
+        /// </summary>
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var equipments = _fileService.GetData<Equipment>(_equipmentPath);
+            var equipments = await _context.Equipments.ToListAsync();
             return Ok(equipments);
         }
 
-        // GET: api/equipment/5
+        /// <summary>
+        /// GET: api/equipment/{id} - Lấy chi tiết thiết bị theo ID.
+        /// </summary>
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var equipments = _fileService.GetData<Equipment>(_equipmentPath);
-            var equipment = equipments.FirstOrDefault(e => e.EquipmentID == id);
+            var equipment = await _context.Equipments.FindAsync(id);
             if (equipment == null) return NotFound(new { message = "Không tìm thấy thiết bị." });
             return Ok(equipment);
         }
 
-        // POST: api/equipment
+        /// <summary>
+        /// POST: api/equipment - Thêm thiết bị mới.
+        /// Tự động tạo bản ghi tồn kho mặc định cho thiết bị.
+        /// </summary>
         [HttpPost]
-        public IActionResult Create([FromBody] Equipment equipment)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Create([FromBody] EquipmentEntity equipment)
         {
-            var equipments = _fileService.GetData<Equipment>(_equipmentPath);
-            equipment.EquipmentID = equipments.Count > 0 ? equipments.Max(e => e.EquipmentID) + 1 : 1;
-            equipments.Add(equipment);
-            _fileService.SaveData(_equipmentPath, equipments);
+            _context.Equipments.Add(equipment);
+            await _context.SaveChangesAsync();
 
             // Tạo tồn kho mặc định
-            var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-            storages.Add(new EquipmentStorage
+            var storage = new EquipmentStorageEntity
             {
-                StorageID = storages.Count > 0 ? storages.Max(s => s.StorageID) + 1 : 1,
                 EquipmentID = equipment.EquipmentID,
                 CurrentQuantity = 0,
                 MinRequiredQuantity = 1,
                 ConditionStatus = "Good",
                 WarehouseLocation = "Kho chính"
-            });
-            _fileService.SaveData(_storagePath, storages);
+            };
+            _context.EquipmentStorages.Add(storage);
+            await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = equipment.EquipmentID }, equipment);
         }
 
-        // PUT: api/equipment/5
+        /// <summary>
+        /// PUT: api/equipment/{id} - Cập nhật thông tin thiết bị theo ID.
+        /// </summary>
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Equipment equipment)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Update(int id, [FromBody] EquipmentEntity equipment)
         {
-            var equipments = _fileService.GetData<Equipment>(_equipmentPath);
-            var index = equipments.FindIndex(e => e.EquipmentID == id);
-            if (index == -1) return NotFound(new { message = "Không tìm thấy thiết bị." });
+            if (id != equipment.EquipmentID) return BadRequest();
 
-            equipment.EquipmentID = id;
-            equipments[index] = equipment;
-            _fileService.SaveData(_equipmentPath, equipments);
+            _context.Entry(equipment).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!EquipmentExists(id))
+                    return NotFound(new { message = "Không tìm thấy thiết bị." });
+                else
+                    throw;
+            }
+
             return Ok(equipment);
         }
 
-        // DELETE: api/equipment/5
+        /// <summary>
+        /// DELETE: api/equipment/{id} - Xóa thiết bị theo ID.
+        /// </summary>
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var equipments = _fileService.GetData<Equipment>(_equipmentPath);
-            var equipment = equipments.FirstOrDefault(e => e.EquipmentID == id);
+            var equipment = await _context.Equipments.FindAsync(id);
             if (equipment == null) return NotFound(new { message = "Không tìm thấy thiết bị." });
 
-            equipments.Remove(equipment);
-            _fileService.SaveData(_equipmentPath, equipments);
+            _context.Equipments.Remove(equipment);
+            await _context.SaveChangesAsync();
             return Ok(new { message = "Đã xóa thiết bị." });
         }
 
-        // GET: api/equipment/storage - Xem tồn kho
+        /// <summary>
+        /// GET: api/equipment/storage - Xem tồn kho thiết bị.
+        /// Kết hợp dữ liệu tồn kho với thông tin thiết bị, đánh dấu cảnh báo tồn kho thấp.
+        /// </summary>
         [HttpGet("storage")]
-        public IActionResult GetStorage()
+        public async Task<IActionResult> GetStorage()
         {
-            var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-            var equipments = _fileService.GetData<Equipment>(_equipmentPath);
+            var storages = await _context.EquipmentStorages
+                .Include(s => s.Equipment)
+                .ToListAsync();
 
-            var result = storages.Select(s =>
+            var result = storages.Select(s => new
             {
-                var eq = equipments.FirstOrDefault(e => e.EquipmentID == s.EquipmentID);
-                return new
-                {
-                    s.StorageID,
-                    s.EquipmentID,
-                    EquipmentName = eq?.EquipmentName ?? "N/A",
-                    Category = eq?.Category ?? "N/A",
-                    s.CurrentQuantity,
-                    s.MinRequiredQuantity,
-                    s.ConditionStatus,
-                    s.WarehouseLocation,
-                    IsLowStock = s.CurrentQuantity <= (s.MinRequiredQuantity * 0.1m) // Cảnh báo tồn kho < 10%
-                };
+                s.StorageID,
+                s.EquipmentID,
+                EquipmentName = s.Equipment?.EquipmentName ?? "N/A",
+                Category = s.Equipment?.Category ?? "N/A",
+                s.CurrentQuantity,
+                s.MinRequiredQuantity,
+                s.ConditionStatus,
+                s.WarehouseLocation,
+                IsLowStock = s.CurrentQuantity <= Math.Ceiling(s.MinRequiredQuantity * 0.1m)
             });
 
             return Ok(result);
         }
 
-        // GET: api/equipment/alerts - Cảnh báo thiết bị
+        /// <summary>
+        /// GET: api/equipment/alerts - Lấy cảnh báo thiết bị.
+        /// Kiểm tra: tồn kho thấp, bảo trì đến hạn, hết bảo hành, hết hạn sử dụng.
+        /// </summary>
         [HttpGet("alerts")]
-        public IActionResult GetAlerts()
+        public async Task<IActionResult> GetAlerts()
         {
-            var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-            var equipments = _fileService.GetData<Equipment>(_equipmentPath);
-            var schedules = _fileService.GetData<EquipmentSchedule>(_schedulePath);
+            var storages = await _context.EquipmentStorages.Include(s => s.Equipment).ToListAsync();
+            var schedules = await _context.EquipmentSchedules.Include(s => s.Equipment).ToListAsync();
 
             var alerts = new List<object>();
 
@@ -132,11 +158,10 @@ namespace danentang.Controllers
             {
                 if (s.CurrentQuantity <= Math.Ceiling(s.MinRequiredQuantity * 0.1))
                 {
-                    var eq = equipments.FirstOrDefault(e => e.EquipmentID == s.EquipmentID);
                     alerts.Add(new
                     {
                         Type = "LowStock",
-                        Message = $"Thiết bị '{eq?.EquipmentName}' tồn kho thấp: {s.CurrentQuantity}/{s.MinRequiredQuantity}",
+                        Message = $"Thiết bị '{s.Equipment?.EquipmentName}' tồn kho thấp: {s.CurrentQuantity}/{s.MinRequiredQuantity}",
                         EquipmentID = s.EquipmentID,
                         Severity = "Warning"
                     });
@@ -151,7 +176,7 @@ namespace danentang.Controllers
                     alerts.Add(new
                     {
                         Type = "MaintenanceDue",
-                        Message = $"Thiết bị '{sch.EquipmentName}' sắp đến hạn bảo trì: {sch.NextMaintenanceDate:dd/MM/yyyy}",
+                        Message = $"Thiết bị '{sch.Equipment?.EquipmentName ?? sch.EquipmentName}' sắp đến hạn bảo trì: {sch.NextMaintenanceDate:dd/MM/yyyy}",
                         EquipmentID = sch.EquipmentID,
                         Severity = sch.NextMaintenanceDate <= DateTime.Now ? "Critical" : "Warning"
                     });
@@ -163,7 +188,7 @@ namespace danentang.Controllers
                     alerts.Add(new
                     {
                         Type = "WarrantyExpiring",
-                        Message = $"Thiết bị '{sch.EquipmentName}' sắp hết hạn bảo hành: {sch.WarrantyExpiry.Value:dd/MM/yyyy}",
+                        Message = $"Thiết bị '{sch.Equipment?.EquipmentName ?? sch.EquipmentName}' sắp hết hạn bảo hành: {sch.WarrantyExpiry.Value:dd/MM/yyyy}",
                         EquipmentID = sch.EquipmentID,
                         Severity = sch.WarrantyExpiry.Value <= DateTime.Now ? "Critical" : "Info"
                     });
@@ -175,7 +200,7 @@ namespace danentang.Controllers
                     alerts.Add(new
                     {
                         Type = "ShelfLifeExpiring",
-                        Message = $"Thiết bị '{sch.EquipmentName}' sắp hết hạn sử dụng: {sch.ShelfLifeExpiry.Value:dd/MM/yyyy}",
+                        Message = $"Thiết bị '{sch.Equipment?.EquipmentName ?? sch.EquipmentName}' sắp hết hạn sử dụng: {sch.ShelfLifeExpiry.Value:dd/MM/yyyy}",
                         EquipmentID = sch.EquipmentID,
                         Severity = "Critical"
                     });
@@ -185,27 +210,40 @@ namespace danentang.Controllers
             return Ok(alerts);
         }
 
-        // GET: api/equipment/schedules - Lịch bảo trì
+        /// <summary>
+        /// GET: api/equipment/schedules - Lấy danh sách lịch bảo trì định kỳ của thiết bị.
+        /// </summary>
         [HttpGet("schedules")]
-        public IActionResult GetSchedules()
+        public async Task<IActionResult> GetSchedules()
         {
-            var schedules = _fileService.GetData<EquipmentSchedule>(_schedulePath);
+            var schedules = await _context.EquipmentSchedules.Include(s => s.Equipment).ToListAsync();
             return Ok(schedules);
         }
 
-        // PUT: api/equipment/storage/5 - Cập nhật tồn kho
+        /// <summary>
+        /// PUT: api/equipment/storage/{equipmentId} - Cập nhật thông tin tồn kho của thiết bị.
+        /// </summary>
         [HttpPut("storage/{equipmentId}")]
-        public IActionResult UpdateStorage(int equipmentId, [FromBody] EquipmentStorage storage)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> UpdateStorage(int equipmentId, [FromBody] EquipmentStorageEntity storage)
         {
-            var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-            var index = storages.FindIndex(s => s.EquipmentID == equipmentId);
-            if (index == -1) return NotFound(new { message = "Không tìm thấy thiết bị trong kho." });
+            var existingStorage = await _context.EquipmentStorages
+                .FirstOrDefaultAsync(s => s.EquipmentID == equipmentId);
 
-            storage.EquipmentID = equipmentId;
-            storage.StorageID = storages[index].StorageID;
-            storages[index] = storage;
-            _fileService.SaveData(_storagePath, storages);
-            return Ok(storage);
+            if (existingStorage == null) return NotFound(new { message = "Không tìm thấy thiết bị trong kho." });
+
+            existingStorage.CurrentQuantity = storage.CurrentQuantity;
+            existingStorage.ConditionStatus = storage.ConditionStatus;
+            existingStorage.MinRequiredQuantity = storage.MinRequiredQuantity;
+            existingStorage.WarehouseLocation = storage.WarehouseLocation;
+
+            await _context.SaveChangesAsync();
+            return Ok(existingStorage);
+        }
+
+        private bool EquipmentExists(int id)
+        {
+            return _context.Equipments.Any(e => e.EquipmentID == id);
         }
     }
 }
