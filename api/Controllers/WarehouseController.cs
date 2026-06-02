@@ -1,171 +1,247 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using danentang.Models;
-using danentang.Services;
+using danentang.Data;
+using danentang.Data.Entities;
 
 namespace danentang.Controllers
 {
+    /// <summary>
+    /// Controller quản lý kho thiết bị - nhập/xuất kho, thanh lý, kiểm kê và báo cáo.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
     public class WarehouseController : ControllerBase
     {
-        private readonly JsonFileService _fileService;
-        private readonly string _transactionPath = "data/stock_transactions.json";
-        private readonly string _storagePath = "data/equipment_storage.json";
-        private readonly string _equipmentPath = "data/equipments.json";
-        private readonly string _checkPath = "data/inventory_checks.json";
+        private readonly CinemaDbContext _context;
 
-        public WarehouseController(JsonFileService fileService)
+        public WarehouseController(CinemaDbContext context)
         {
-            _fileService = fileService;
+            _context = context;
         }
 
-        // POST: api/warehouse/import - Nhập kho
+        /// <summary>
+        /// POST: api/warehouse/import - Nhập thiết bị vào kho.
+        /// Tự động cập nhật số lượng tồn kho.
+        /// </summary>
         [HttpPost("import")]
-        public IActionResult ImportStock([FromBody] StockTransaction transaction)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> ImportStock([FromBody] StockTransactionEntity transaction)
         {
-            var transactions = _fileService.GetData<StockTransaction>(_transactionPath);
-            transaction.TransactionID = transactions.Count > 0 ? transactions.Max(t => t.TransactionID) + 1 : 1;
+            if (transaction.Quantity <= 0)
+                return BadRequest(new { message = "Số lượng nhập kho phải lớn hơn 0." });
+            if (transaction.UnitPrice < 0)
+                return BadRequest(new { message = "Đơn giá không được nhỏ hơn 0." });
+
             transaction.TransactionType = "Import";
             transaction.TransactionDate = DateTime.Now;
-            transactions.Add(transaction);
-            _fileService.SaveData(_transactionPath, transactions);
+            _context.StockTransactions.Add(transaction);
 
             // Cập nhật tồn kho
-            var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-            var storage = storages.FirstOrDefault(s => s.EquipmentID == transaction.EquipmentID);
+            var storage = await _context.EquipmentStorages.FirstOrDefaultAsync(s => s.EquipmentID == transaction.EquipmentID);
             if (storage != null)
             {
                 storage.CurrentQuantity += transaction.Quantity;
-                _fileService.SaveData(_storagePath, storages);
             }
+
+            await _context.SaveChangesAsync();
 
             return Ok(new { message = $"Đã nhập kho {transaction.Quantity} {transaction.EquipmentName}", transaction });
         }
 
-        // POST: api/warehouse/export - Xuất kho
+        /// <summary>
+        /// POST: api/warehouse/export - Xuất thiết bị khỏi kho.
+        /// Kiểm tra số lượng tồn kho đủ trước khi xuất.
+        /// </summary>
         [HttpPost("export")]
-        public IActionResult ExportStock([FromBody] StockTransaction transaction)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> ExportStock([FromBody] StockTransactionEntity transaction)
         {
-            var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-            var storage = storages.FirstOrDefault(s => s.EquipmentID == transaction.EquipmentID);
+            if (transaction.Quantity <= 0)
+                return BadRequest(new { message = "Số lượng xuất kho phải lớn hơn 0." });
+            if (transaction.UnitPrice < 0)
+                return BadRequest(new { message = "Đơn giá không được nhỏ hơn 0." });
+
+            var storage = await _context.EquipmentStorages.FirstOrDefaultAsync(s => s.EquipmentID == transaction.EquipmentID);
             if (storage == null) return NotFound(new { message = "Thiết bị không có trong kho." });
             if (storage.CurrentQuantity < transaction.Quantity)
                 return BadRequest(new { message = $"Không đủ số lượng. Tồn kho: {storage.CurrentQuantity}" });
 
-            var transactions = _fileService.GetData<StockTransaction>(_transactionPath);
-            transaction.TransactionID = transactions.Count > 0 ? transactions.Max(t => t.TransactionID) + 1 : 1;
             transaction.TransactionType = "Export";
             transaction.TransactionDate = DateTime.Now;
-            transactions.Add(transaction);
-            _fileService.SaveData(_transactionPath, transactions);
+            _context.StockTransactions.Add(transaction);
 
             storage.CurrentQuantity -= transaction.Quantity;
-            _fileService.SaveData(_storagePath, storages);
+
+            await _context.SaveChangesAsync();
 
             return Ok(new { message = $"Đã xuất kho {transaction.Quantity} {transaction.EquipmentName}", transaction });
         }
 
-        // POST: api/warehouse/damaged - Nhập thiết bị hỏng vào kho
+        /// <summary>
+        /// POST: api/warehouse/damaged - Ghi nhận thiết bị hỏng vào kho.
+        /// </summary>
         [HttpPost("damaged")]
-        public IActionResult ReceiveDamaged([FromBody] StockTransaction transaction)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> ReceiveDamaged([FromBody] StockTransactionEntity transaction)
         {
-            var transactions = _fileService.GetData<StockTransaction>(_transactionPath);
-            transaction.TransactionID = transactions.Count > 0 ? transactions.Max(t => t.TransactionID) + 1 : 1;
+            if (transaction.Quantity <= 0)
+                return BadRequest(new { message = "Số lượng báo hỏng phải lớn hơn 0." });
+            if (transaction.UnitPrice < 0)
+                return BadRequest(new { message = "Đơn giá không được nhỏ hơn 0." });
+
             transaction.TransactionType = "Damaged";
             transaction.TransactionDate = DateTime.Now;
-            transactions.Add(transaction);
-            _fileService.SaveData(_transactionPath, transactions);
+            _context.StockTransactions.Add(transaction);
+            await _context.SaveChangesAsync();
             return Ok(new { message = "Đã ghi nhận thiết bị hỏng.", transaction });
         }
 
-        // POST: api/warehouse/dispose - Thanh lý thiết bị
+        /// <summary>
+        /// POST: api/warehouse/dispose - Thanh lý thiết bị.
+        /// Giảm số lượng tồn kho tương ứng.
+        /// </summary>
         [HttpPost("dispose")]
-        public IActionResult DisposeEquipment([FromBody] StockTransaction transaction)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> DisposeEquipment([FromBody] StockTransactionEntity transaction)
         {
-            var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-            var storage = storages.FirstOrDefault(s => s.EquipmentID == transaction.EquipmentID);
+            if (transaction.Quantity <= 0)
+                return BadRequest(new { message = "Số lượng thanh lý phải lớn hơn 0." });
+            if (transaction.UnitPrice < 0)
+                return BadRequest(new { message = "Đơn giá không được nhỏ hơn 0." });
 
-            var transactions = _fileService.GetData<StockTransaction>(_transactionPath);
-            transaction.TransactionID = transactions.Count > 0 ? transactions.Max(t => t.TransactionID) + 1 : 1;
             transaction.TransactionType = "Disposed";
             transaction.TransactionDate = DateTime.Now;
-            transactions.Add(transaction);
-            _fileService.SaveData(_transactionPath, transactions);
+            _context.StockTransactions.Add(transaction);
 
+            var storage = await _context.EquipmentStorages.FirstOrDefaultAsync(s => s.EquipmentID == transaction.EquipmentID);
             if (storage != null)
             {
                 storage.CurrentQuantity = Math.Max(0, storage.CurrentQuantity - transaction.Quantity);
-                _fileService.SaveData(_storagePath, storages);
             }
 
+            await _context.SaveChangesAsync();
             return Ok(new { message = "Đã thanh lý thiết bị.", transaction });
         }
 
-        // GET: api/warehouse/transactions - Lịch sử giao dịch
+        /// <summary>
+        /// GET: api/warehouse/transactions - Lịch sử giao dịch kho.
+        /// Hỗ trợ lọc theo loại giao dịch (type) và ngày (date).
+        /// </summary>
         [HttpGet("transactions")]
-        public IActionResult GetTransactions([FromQuery] string? type = null, [FromQuery] string? date = null)
+        public async Task<IActionResult> GetTransactions([FromQuery] string? type = null, [FromQuery] string? date = null)
         {
-            var transactions = _fileService.GetData<StockTransaction>(_transactionPath);
+            var query = _context.StockTransactions.AsQueryable();
+
             if (!string.IsNullOrEmpty(type))
-                transactions = transactions.Where(t => t.TransactionType.Equals(type, StringComparison.OrdinalIgnoreCase)).ToList();
+                query = query.Where(t => t.TransactionType == type);
             if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var d))
-                transactions = transactions.Where(t => t.TransactionDate.Date == d.Date).ToList();
-            return Ok(transactions.OrderByDescending(t => t.TransactionDate));
+                query = query.Where(t => t.TransactionDate.Date == d.Date);
+
+            var transactions = await query.OrderByDescending(t => t.TransactionDate).ToListAsync();
+            return Ok(transactions);
         }
 
-        // GET: api/warehouse/report - Báo cáo cuối ngày
+        /// <summary>
+        /// GET: api/warehouse/report - Báo cáo cuối ngày.
+        /// Thống kê số lượng nhập/xuất/hỏng/thanh lý trong ngày.
+        /// </summary>
         [HttpGet("report")]
-        public IActionResult DailyReport([FromQuery] string? date = null)
+        public async Task<IActionResult> DailyReport([FromQuery] string? date = null)
         {
-            var reportDate = string.IsNullOrEmpty(date) ? DateTime.Today : DateTime.Parse(date);
-            var transactions = _fileService.GetData<StockTransaction>(_transactionPath);
-            var today = transactions.Where(t => t.TransactionDate.Date == reportDate.Date).ToList();
+            DateTime reportDate;
+            if (string.IsNullOrEmpty(date))
+            {
+                reportDate = DateTime.Today;
+            }
+            else
+            {
+                if (!DateTime.TryParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out reportDate))
+                {
+                    return BadRequest(new { message = "Định dạng ngày không hợp lệ. Vui lòng sử dụng định dạng yyyy-MM-dd." });
+                }
+            }
+            var todayTransactions = await _context.StockTransactions
+                .Where(t => t.TransactionDate.Date == reportDate.Date)
+                .ToListAsync();
+
+            var todayMaintenances = await _context.MaintenanceRequests
+                .Where(r => r.Status == "Completed" && r.CompletedAt.HasValue && r.CompletedAt.Value.Date == reportDate.Date)
+                .ToListAsync();
 
             return Ok(new
             {
                 date = reportDate.ToString("dd/MM/yyyy"),
-                totalImports = today.Count(t => t.TransactionType == "Import"),
-                totalExports = today.Count(t => t.TransactionType == "Export"),
-                totalDamaged = today.Count(t => t.TransactionType == "Damaged"),
-                totalDisposed = today.Count(t => t.TransactionType == "Disposed"),
-                transactions = today
+                totalImports = todayTransactions.Count(t => t.TransactionType == "Import"),
+                totalExports = todayTransactions.Count(t => t.TransactionType == "Export"),
+                totalDamaged = todayTransactions.Count(t => t.TransactionType == "Damaged"),
+                totalDisposed = todayTransactions.Count(t => t.TransactionType == "Disposed"),
+                transactions = todayTransactions,
+                totalMaintenances = todayMaintenances.Count,
+                maintenances = todayMaintenances
             });
         }
 
-        // POST: api/warehouse/inventory-check - Kiểm kê kho
+        /// <summary>
+        /// POST: api/warehouse/inventory-check - Kiểm kê kho.
+        /// Tính chênh lệch giữa thực tế và hệ thống, cập nhật tồn kho nếu có sai lệch.
+        /// </summary>
         [HttpPost("inventory-check")]
-        public IActionResult PerformCheck([FromBody] InventoryCheck check)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> PerformCheck([FromBody] InventoryCheckEntity check)
         {
-            var checks = _fileService.GetData<InventoryCheck>(_checkPath);
-            check.CheckID = checks.Count > 0 ? checks.Max(c => c.CheckID) + 1 : 1;
+            if (check.SystemQuantity < 0 || check.ActualQuantity < 0)
+            {
+                return BadRequest(new { message = "Số lượng hệ thống và thực tế không được nhỏ hơn 0." });
+            }
+
             check.Discrepancy = check.ActualQuantity - check.SystemQuantity;
             check.CheckDate = DateTime.Now;
-            checks.Add(check);
-            _fileService.SaveData(_checkPath, checks);
+            _context.InventoryChecks.Add(check);
 
             // Cập nhật tồn kho nếu có chênh lệch
             if (check.Discrepancy != 0)
             {
-                var storages = _fileService.GetData<EquipmentStorage>(_storagePath);
-                var storage = storages.FirstOrDefault(s => s.EquipmentID == check.EquipmentID);
+                var storage = await _context.EquipmentStorages.FirstOrDefaultAsync(s => s.EquipmentID == check.EquipmentID);
                 if (storage != null)
                 {
                     storage.CurrentQuantity = check.ActualQuantity;
-                    _fileService.SaveData(_storagePath, storages);
                 }
             }
 
+            await _context.SaveChangesAsync();
             return Ok(check);
         }
 
-        // GET: api/warehouse/inventory-checks - Lịch sử kiểm kê
+        /// <summary>
+        /// GET: api/warehouse/inventory-checks - Lịch sử kiểm kê kho.
+        /// </summary>
         [HttpGet("inventory-checks")]
-        public IActionResult GetChecks()
+        public async Task<IActionResult> GetChecks()
         {
-            var checks = _fileService.GetData<InventoryCheck>(_checkPath);
-            return Ok(checks.OrderByDescending(c => c.CheckDate));
+            var checks = await _context.InventoryChecks.OrderByDescending(c => c.CheckDate).ToListAsync();
+            return Ok(checks);
+        }
+
+        /// <summary>
+        /// DELETE: api/warehouse/transaction/{id} - Xóa một giao dịch kho.
+        /// </summary>
+        [HttpDelete("transaction/{id}")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> DeleteTransaction(int id)
+        {
+            var tx = await _context.StockTransactions.FindAsync(id);
+            if (tx == null) return NotFound(new { message = "Không tìm thấy giao dịch." });
+
+            _context.StockTransactions.Remove(tx);
+            await _context.SaveChangesAsync();
+            return Ok(new { status = "success", message = "Đã xóa giao dịch thành công." });
         }
     }
 }
