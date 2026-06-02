@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("danentang")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+82e7f775f8604604d06684cd8be8adf21217afcd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+278f6f2d2a3875d829fc986a0979688baa99827d")]
 [assembly: System.Reflection.AssemblyProductAttribute("danentang")]
 [assembly: System.Reflection.AssemblyTitleAttribute("danentang")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
