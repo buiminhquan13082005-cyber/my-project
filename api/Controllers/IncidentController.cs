@@ -34,7 +34,7 @@ namespace danentang.Controllers
             var query = _context.Incidents.AsQueryable();
             if (!string.IsNullOrEmpty(status))
                 query = query.Where(i => i.Status == status);
-
+            
             var list = await query.OrderByDescending(i => i.ReportedAt).ToListAsync();
             return Ok(list);
         }
@@ -58,7 +58,7 @@ namespace danentang.Controllers
                 incident.ReportedAt = DateTime.Now;
                 incident.Status = "Open";
                 incident.RoomName = room.RoomName;
-
+                
                 _context.Incidents.Add(incident);
 
                 // Tự động chuyển phòng sang trạng thái bảo trì
@@ -84,7 +84,7 @@ namespace danentang.Controllers
         {
             var inc = await _context.Incidents.FindAsync(id);
             if (inc == null) return NotFound();
-
+            
             inc.Status = req.Status;
             await _context.SaveChangesAsync();
             return Ok(inc);
