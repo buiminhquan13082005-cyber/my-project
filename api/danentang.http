@@ -1,6 +1,208 @@
-@danentang_HostAddress = http://localhost:5092
+@Host = http://localhost:5092
 
-GET {{danentang_HostAddress}}/weatherforecast/
-Accept: application/json
+### ==========================================
+### 1. XÁC THỰC & ĐĂNG NHẬP (AUTHENTICATION)
+### ==========================================
+
+# @name LoginAdmin
+# Đăng nhập với tài khoản Quản trị viên (Admin)
+POST {{Host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@test.com",
+  "password": "admin"
+}
 
 ###
+
+# @name LoginStaff
+# Đăng nhập với tài khoản Kỹ thuật viên (Staff / Tech)
+POST {{Host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "quan@test.com",
+  "password": "quan"
+}
+
+###
+
+# Lấy thông tin cá nhân của người dùng hiện tại (Yêu cầu Token từ Login)
+# Lưu ý: Điền Token nhận được từ API Login vào Bearer Token dưới đây
+GET {{Host}}/api/auth/me
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
+
+
+### ==========================================
+### 2. SỰ CỐ & BẢO TRÌ LIÊN KẾT (ROOM BLOCKING & INCIDENTS)
+### ==========================================
+
+# 2.1 Xem danh sách phòng chiếu hiện tại để kiểm tra trạng thái
+GET {{Host}}/api/room
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
+
+# 2.2 Báo cáo sự cố đột xuất tại Phòng 1 (Báo hỏng máy chiếu)
+# Mong đợi: Tạo thành công Sự cố ID = 1 và TỰ ĐỘNG khóa Phòng 1 (RoomStatus = "Maintenance")
+POST {{Host}}/api/incident
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "roomID": 1,
+  "roomName": "Phòng chiếu 1",
+  "description": "Máy chiếu bị nhấp nháy, mất màu liên tục đột xuất trước giờ chiếu",
+  "employeeID": 2,
+  "employeeName": "Nguyễn Tiến Phúc"
+}
+
+###
+
+# 2.3 Xem lại danh sách phòng chiếu để kiểm tra Phòng 1 đã bị khóa chưa
+# Mong đợi: RoomID 1 có RoomStatus == "Maintenance"
+GET {{Host}}/api/room
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
+
+
+### ==========================================
+### 3. CHẶN XẾP LỊCH CHIẾU PHÒNG HỎNG (SHOWTIME BLOCKING)
+### ==========================================
+
+# 3.1 Thử xếp lịch chiếu vào Phòng 1 đang bị hỏng
+# Mong đợi: Trả về lỗi 400 Bad Request và thông báo: "Phòng chiếu này đang trong quá trình bảo trì, không thể xếp lịch chiếu!"
+POST {{Host}}/api/showtime
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "movieID": 1,
+  "movieTitle": "Lật Mặt 7",
+  "roomID": 1,
+  "roomName": "Phòng chiếu 1",
+  "startTime": "2026-05-29T19:00:00",
+  "endTime": "2026-05-29T21:00:00"
+}
+
+###
+
+# 3.2 Thử xếp lịch trùng giờ chiếu tại một phòng hoạt động bình thường (Phòng 2)
+# Mong đợi: Suất đầu tiên thành công
+POST {{Host}}/api/showtime
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "movieID": 1,
+  "movieTitle": "Lật Mặt 7",
+  "roomID": 2,
+  "roomName": "Phòng chiếu 2",
+  "startTime": "2026-05-29T19:00:00",
+  "endTime": "2026-05-29T21:00:00"
+}
+
+###
+
+# 3.3 Thử xếp suất chiếu tiếp theo trùng vào khung giờ 19:00 - 21:00 tại Phòng 2
+# Mong đợi: Trả về lỗi 400 và thông báo: "Trùng lịch chiếu trong phòng này!"
+POST {{Host}}/api/showtime
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "movieID": 2,
+  "movieTitle": "Mai",
+  "roomID": 2,
+  "roomName": "Phòng chiếu 2",
+  "startTime": "2026-05-29T20:00:00",
+  "endTime": "2026-05-29T22:00:00"
+}
+
+###
+
+
+### ==========================================
+### 4. XỬ LÝ SỰ CỐ & MỞ KHÓA PHÒNG CHIẾU
+### ==========================================
+
+# 4.1 Xem danh sách các yêu cầu bảo trì đang chờ xử lý
+GET {{Host}}/api/maintenance
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
+
+# 4.2 Phân công Kỹ thuật viên (Bùi Minh Quân - ID 3) xử lý yêu cầu bảo trì ID = 1 (do sự cố ở Phòng 1 tạo ra)
+PUT {{Host}}/api/maintenance/1/assign
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "employeeID": 3,
+  "employeeName": "Bùi Minh Quân"
+}
+
+###
+
+# 4.3 Kỹ thuật viên ghi nhật ký thực tế bảo trì (Sửa chữa thành công)
+POST {{Host}}/api/maintenance/1/log
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "actionTaken": "Repaired",
+  "notes": "Đã tiến hành vệ sinh thấu kính máy chiếu và cắm lại cáp tín hiệu HDMI, máy hoạt động sắc nét trở lại."
+}
+
+###
+
+# 4.4 Kỹ thuật viên hoàn tất bảo trì
+# Mong đợi: Trạng thái bảo trì đổi thành Completed, sự cố chuyển thành Resolved, và TỰ ĐỘNG mở khóa Phòng 1 (RoomStatus = "Active")
+PUT {{Host}}/api/maintenance/1/complete
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
+
+# 4.5 Xem lại danh sách phòng chiếu để kiểm tra Phòng 1 đã mở lại chưa
+# Mong đợi: RoomID 1 khôi phục về RoomStatus == "Active"
+GET {{Host}}/api/room
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
+
+# 4.6 Thử xếp lại lịch chiếu vào Phòng 1 sau khi đã sửa xong thiết bị
+# Mong đợi: Tạo thành công 200 OK
+POST {{Host}}/api/showtime
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "movieID": 1,
+  "movieTitle": "Lật Mặt 7",
+  "roomID": 1,
+  "roomName": "Phòng chiếu 1",
+  "startTime": "2026-05-29T19:00:00",
+  "endTime": "2026-05-29T21:00:00"
+}
+
+###
+
+
+### ==========================================
+### 5. CẢNH BÁO KHO & THANH LÝ THIẾT BỊ (WAREHOUSE & ALERTS)
+### ==========================================
+
+# 5.1 Lấy toàn bộ cảnh báo kho và thiết bị
+# Mong đợi: Hiển thị các cảnh báo tồn kho thấp dưới 10%, cảnh báo máy chiếu/loa quá hạn bảo trì hoặc sắp hết hạn bảo hành.
+GET {{Host}}/api/equipment/alerts
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
+
+# 5.2 Kiểm tra tồn kho linh kiện trong kho dự trữ
+GET {{Host}}/api/equipment/storage
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
