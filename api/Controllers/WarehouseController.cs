@@ -143,7 +143,7 @@ namespace danentang.Controllers
                 query = query.Where(t => t.TransactionType == type);
             if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var d))
                 query = query.Where(t => t.TransactionDate.Date == d.Date);
-
+            
             var transactions = await query.OrderByDescending(t => t.TransactionDate).ToListAsync();
             return Ok(transactions);
         }

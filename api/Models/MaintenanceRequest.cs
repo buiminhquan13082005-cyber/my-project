@@ -8,7 +8,7 @@ namespace danentang.Models
         public int EquipmentID { get; set; }
         public string EquipmentName { get; set; } = string.Empty;
         public int? ReportedByEmployeeID { get; set; }
-
+        
         [Required(ErrorMessage = "Người báo cáo là bắt buộc")]
         public string ReportedByName { get; set; } = string.Empty;
         public int? AssignedToEmployeeID { get; set; }

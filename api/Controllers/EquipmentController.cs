@@ -229,7 +229,7 @@ namespace danentang.Controllers
         {
             var existingStorage = await _context.EquipmentStorages
                 .FirstOrDefaultAsync(s => s.EquipmentID == equipmentId);
-
+            
             if (existingStorage == null) return NotFound(new { message = "Không tìm thấy thiết bị trong kho." });
 
             existingStorage.CurrentQuantity = storage.CurrentQuantity;

@@ -82,7 +82,7 @@ namespace danentang.Controllers
             req.AssignedToEmployeeID = assignReq.EmployeeID;
             req.AssignedToName = assignReq.EmployeeName;
             req.Status = "Assigned";
-
+            
             await _context.SaveChangesAsync();
             return Ok(req);
         }
@@ -140,9 +140,9 @@ namespace danentang.Controllers
                     }
 
                     // Kiểm tra xem phòng đó còn bất kỳ sự cố chưa giải quyết nào khác không
-                    var hasOtherActiveIncidents = await _context.Incidents.AnyAsync(i =>
-                        i.RoomID == incident.RoomID &&
-                        i.IncidentID != incident.IncidentID &&
+                    var hasOtherActiveIncidents = await _context.Incidents.AnyAsync(i => 
+                        i.RoomID == incident.RoomID && 
+                        i.IncidentID != incident.IncidentID && 
                         i.Status != "Resolved");
 
                     if (!hasOtherActiveIncidents)
@@ -184,14 +184,14 @@ namespace danentang.Controllers
             var due = await _context.EquipmentSchedules
                 .Where(s => s.NextMaintenanceDate <= DateTime.Now.AddDays(7))
                 .ToListAsync();
-
+            
             var created = new List<MaintenanceRequestEntity>();
 
             foreach (var s in due)
             {
                 bool hasPending = await _context.MaintenanceRequests
                     .AnyAsync(r => r.EquipmentID == s.EquipmentID && r.Status != "Completed" && r.RequestType == "Scheduled");
-
+                
                 if (!hasPending)
                 {
                     var nr = new MaintenanceRequestEntity
@@ -208,12 +208,12 @@ namespace danentang.Controllers
                     created.Add(nr);
                 }
             }
-
+            
             if (created.Any())
             {
                 await _context.SaveChangesAsync();
             }
-
+            
             return Ok(new { dueCount = due.Count, newRequests = created.Count, requests = created });
         }
 

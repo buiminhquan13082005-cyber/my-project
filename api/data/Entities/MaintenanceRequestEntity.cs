@@ -4,32 +4,47 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace danentang.Data.Entities
 {
-    [Table("MaintenanceLogs")]
-    public class MaintenanceLogEntity
+    [Table("MaintenanceRequests")]
+    public class MaintenanceRequestEntity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int LogID { get; set; }
-
-        [Required]
         public int RequestID { get; set; }
 
         [Required]
-        public int EmployeeID { get; set; }
+        public int EquipmentID { get; set; }
+
+        [MaxLength(255)]
+        public string? EquipmentName { get; set; }
+
+        public int? ReportedByEmployeeID { get; set; }
+
+        [Required]
+        [MaxLength(150)]
+        public string ReportedByName { get; set; } = string.Empty;
+
+        public int? AssignedToEmployeeID { get; set; }
 
         [MaxLength(150)]
-        public string? EmployeeName { get; set; }
+        public string? AssignedToName { get; set; }
 
-        [MaxLength(100)]
-        public string? ActionTaken { get; set; }
+        [MaxLength(50)]
+        public string RequestType { get; set; } = "Scheduled";
 
-        public string? Notes { get; set; }
+        public string? Description { get; set; }
 
-        public bool IsResolved { get; set; } = false;
+        [MaxLength(50)]
+        public string Priority { get; set; } = "Normal";
 
-        public DateTime Timestamp { get; set; } = DateTime.Now;
+        [MaxLength(50)]
+        public string Status { get; set; } = "Pending";
 
-        [ForeignKey("RequestID")]
-        public virtual MaintenanceRequestEntity? Request { get; set; }
+        public int? IncidentID { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? CompletedAt { get; set; }
+
+        [ForeignKey("EquipmentID")]
+        public virtual EquipmentEntity? Equipment { get; set; }
     }
 }
