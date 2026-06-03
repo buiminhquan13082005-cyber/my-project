@@ -1,112 +1,106 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using danentang.Models;
-using danentang.Services;
+using danentang.Services.Cinema;
 
 namespace danentang.Controllers
 {
+    /// <summary>
+    /// Controller quản lý phòng chiếu - CRUD phòng và quản lý sơ đồ ghế ngồi.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
     public class RoomController : ControllerBase
     {
-        private readonly JsonFileService _fs;
-        private readonly string _path = "data/rooms.json";
-        private readonly string _seatPath = "data/seats.json";
+        private readonly IRoomRepository _repo;
 
-        public RoomController(JsonFileService fs) { _fs = fs; }
+        public RoomController(IRoomRepository repo) { _repo = repo; }
 
+        /// <summary>
+        /// GET: api/room - Lấy danh sách tất cả phòng chiếu.
+        /// </summary>
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            return Ok(_fs.GetData<Room>(_path));
+            return Ok(await _repo.GetAllAsync());
         }
 
+        /// <summary>
+        /// GET: api/room/{id} - Lấy chi tiết phòng chiếu theo ID.
+        /// </summary>
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var r = _fs.GetData<Room>(_path).FirstOrDefault(x => x.RoomID == id);
+            var r = await _repo.GetByIdAsync(id);
             if (r == null) return NotFound();
             return Ok(r);
         }
 
+        /// <summary>
+        /// POST: api/room - Tạo phòng chiếu mới.
+        /// </summary>
         [HttpPost]
-        public IActionResult Create([FromBody] Room room)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Create([FromBody] Room room)
         {
-            var list = _fs.GetData<Room>(_path);
-            room.RoomID = list.Count > 0 ? list.Max(x => x.RoomID) + 1 : 1;
-            list.Add(room);
-            _fs.SaveData(_path, list);
-            return Ok(room);
+            var created = await _repo.CreateAsync(room);
+            return Ok(created);
         }
 
+        /// <summary>
+        /// PUT: api/room/{id} - Cập nhật thông tin phòng chiếu.
+        /// </summary>
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Room room)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Update(int id, [FromBody] Room room)
         {
-            var list = _fs.GetData<Room>(_path);
-            var idx = list.FindIndex(x => x.RoomID == id);
-            if (idx == -1) return NotFound();
-            room.RoomID = id;
-            list[idx] = room;
-            _fs.SaveData(_path, list);
-            return Ok(room);
+            var updated = await _repo.UpdateAsync(id, room);
+            if (updated == null) return NotFound();
+            return Ok(updated);
         }
 
+        /// <summary>
+        /// DELETE: api/room/{id} - Xóa phòng chiếu theo ID.
+        /// </summary>
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var list = _fs.GetData<Room>(_path);
-            var r = list.FirstOrDefault(x => x.RoomID == id);
-            if (r == null) return NotFound();
-            list.Remove(r);
-            _fs.SaveData(_path, list);
-            return Ok(new { message = "Đã xóa." });
+            var result = await _repo.DeleteAsync(id);
+            if (!result.Success) return BadRequest(new { message = result.Message });
+            return Ok(new { message = result.Message });
         }
 
-        // GET: api/room/1/seats
+        /// <summary>
+        /// GET: api/room/{id}/seats - Lấy danh sách ghế ngồi của phòng chiếu.
+        /// Sắp xếp theo hàng và số ghế.
+        /// </summary>
         [HttpGet("{id}/seats")]
-        public IActionResult GetSeats(int id)
+        public async Task<IActionResult> GetSeats(int id)
         {
-            var seats = _fs.GetData<Seat>(_seatPath).Where(s => s.RoomID == id)
-                .OrderBy(s => s.SeatRow).ThenBy(s => s.SeatNumber);
+            var seats = await _repo.GetSeatsByRoomIdAsync(id);
             return Ok(seats);
         }
 
-        // POST: api/room/1/seats/generate - Tạo ghế tự động
+        /// <summary>
+        /// POST: api/room/{id}/seats/generate - Tự động tạo sơ đồ ghế ngồi cho phòng.
+        /// Xóa ghế cũ và tạo lại theo số hàng, số ghế/hàng, số hàng VIP.
+        /// </summary>
         [HttpPost("{id}/seats/generate")]
-        public IActionResult GenerateSeats(int id, [FromBody] GenerateSeatsRequest req)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> GenerateSeats(int id, [FromBody] GenerateSeatsRequest req)
         {
-            var rooms = _fs.GetData<Room>(_path);
-            var room = rooms.FirstOrDefault(x => x.RoomID == id);
-            if (room == null) return NotFound();
-
-            var seats = _fs.GetData<Seat>(_seatPath);
-            seats.RemoveAll(s => s.RoomID == id); // xóa ghế cũ
-
-            int seatId = seats.Count > 0 ? seats.Max(s => s.SeatID) : 0;
-            for (int r = 0; r < req.Rows; r++)
-            {
-                string row = ((char)('A' + r)).ToString();
-                for (int n = 1; n <= req.SeatsPerRow; n++)
-                {
-                    seatId++;
-                    seats.Add(new Seat
-                    {
-                        SeatID = seatId,
-                        RoomID = id,
-                        SeatRow = row,
-                        SeatNumber = n,
-                        SeatType = r >= req.Rows - req.VipRows ? "VIP" : "Standard"
-                    });
-                }
-            }
-            _fs.SaveData(_seatPath, seats);
-            room.Capacity = req.Rows * req.SeatsPerRow;
-            _fs.SaveData(_path, rooms);
-            return Ok(new { message = $"Đã tạo {req.Rows * req.SeatsPerRow} ghế.", capacity = room.Capacity });
+            var result = await _repo.GenerateSeatsAsync(id, req.Rows, req.SeatsPerRow, req.VipRows);
+            if (!result.Success) return BadRequest(new { message = result.Message });
+            
+            return Ok(new { message = result.Message, capacity = result.Capacity });
         }
     }
 
+    /// <summary>
+    /// Request model để tạo ghế tự động cho phòng chiếu.
+    /// </summary>
     public class GenerateSeatsRequest
     {
         public int Rows { get; set; } = 8;

@@ -1,86 +1,93 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using danentang.Models;
-using danentang.Services;
+using danentang.Services.Cinema;
 
 namespace danentang.Controllers
 {
+    /// <summary>
+    /// Controller quản lý suất chiếu phim - CRUD lịch chiếu và kiểm tra trùng lịch.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
     public class ShowtimeController : ControllerBase
     {
-        private readonly JsonFileService _fs;
-        private readonly string _path = "data/showtimes.json";
+        private readonly IShowtimeRepository _repo;
 
-        public ShowtimeController(JsonFileService fs) { _fs = fs; }
+        public ShowtimeController(IShowtimeRepository repo) { _repo = repo; }
 
+        /// <summary>
+        /// GET: api/showtime - Lấy danh sách suất chiếu.
+        /// Hỗ trợ lọc theo ngày (date) và phòng chiếu (roomId).
+        /// </summary>
         [HttpGet]
-        public IActionResult GetAll([FromQuery] string? date = null, [FromQuery] int? roomId = null)
+        public async Task<IActionResult> GetAll([FromQuery] string? date = null, [FromQuery] int? roomId = null)
         {
-            var list = _fs.GetData<Showtime>(_path);
+            DateTime? parsedDate = null;
             if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var d))
-                list = list.Where(s => s.StartTime.Date == d.Date).ToList();
-            if (roomId.HasValue)
-                list = list.Where(s => s.RoomID == roomId.Value).ToList();
-            return Ok(list.OrderBy(s => s.StartTime));
+                parsedDate = d;
+
+            var list = await _repo.GetAllAsync(parsedDate, roomId);
+            return Ok(list);
         }
 
+        /// <summary>
+        /// GET: api/showtime/{id} - Lấy chi tiết suất chiếu theo ID.
+        /// </summary>
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var s = _fs.GetData<Showtime>(_path).FirstOrDefault(x => x.ShowtimeID == id);
+            var s = await _repo.GetByIdAsync(id);
             if (s == null) return NotFound();
             return Ok(s);
         }
 
+        /// <summary>
+        /// POST: api/showtime - Tạo suất chiếu mới.
+        /// Kiểm tra trùng lịch chiếu trong cùng phòng trước khi tạo.
+        /// </summary>
         [HttpPost]
-        public IActionResult Create([FromBody] Showtime showtime)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Create([FromBody] Showtime showtime)
         {
-            var list = _fs.GetData<Showtime>(_path);
-
-            // Kiểm tra trùng lịch chiếu
-            var conflict = list.Any(s =>
-                s.RoomID == showtime.RoomID &&
-                s.StartTime < showtime.EndTime &&
-                s.EndTime > showtime.StartTime);
-            if (conflict) return BadRequest(new { message = "Trùng lịch chiếu trong phòng này!" });
-
-            showtime.ShowtimeID = list.Count > 0 ? list.Max(x => x.ShowtimeID) + 1 : 1;
-            list.Add(showtime);
-            _fs.SaveData(_path, list);
-            return Ok(showtime);
+            var result = await _repo.CreateAsync(showtime);
+            if (!result.Success) return BadRequest(new { message = result.Message });
+            return Ok(result.Data);
         }
 
+        /// <summary>
+        /// PUT: api/showtime/{id} - Cập nhật thông tin suất chiếu theo ID.
+        /// </summary>
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Showtime showtime)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Update(int id, [FromBody] Showtime showtime)
         {
-            var list = _fs.GetData<Showtime>(_path);
-            var idx = list.FindIndex(x => x.ShowtimeID == id);
-            if (idx == -1) return NotFound();
-            showtime.ShowtimeID = id;
-            list[idx] = showtime;
-            _fs.SaveData(_path, list);
-            return Ok(showtime);
+            var result = await _repo.UpdateAsync(id, showtime);
+            if (!result.Success) return BadRequest(new { message = result.Message });
+            return Ok(result.Data);
         }
 
+        /// <summary>
+        /// DELETE: api/showtime/{id} - Xóa suất chiếu theo ID.
+        /// </summary>
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var list = _fs.GetData<Showtime>(_path);
-            var s = list.FirstOrDefault(x => x.ShowtimeID == id);
-            if (s == null) return NotFound();
-            list.Remove(s);
-            _fs.SaveData(_path, list);
-            return Ok(new { message = "Đã xóa suất chiếu." });
+            var result = await _repo.DeleteAsync(id);
+            if (!result.Success) return BadRequest(new { message = result.Message });
+            return Ok(new { message = result.Message });
         }
 
-        // GET: api/showtime/today - Lịch chiếu hôm nay (cho nhân viên)
+        /// <summary>
+        /// GET: api/showtime/today - Lấy danh sách suất chiếu hôm nay.
+        /// Dùng cho app nhân viên để xem lịch chiếu trong ngày.
+        /// </summary>
         [HttpGet("today")]
-        public IActionResult GetToday()
+        public async Task<IActionResult> GetToday()
         {
-            var list = _fs.GetData<Showtime>(_path);
-            var today = list.Where(s => s.StartTime.Date == DateTime.Today).OrderBy(s => s.StartTime);
+            var today = await _repo.GetTodayShowtimesAsync();
             return Ok(today);
         }
     }
